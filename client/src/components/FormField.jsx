@@ -10,8 +10,10 @@ export default function FormField({
   multiline = false,
   rows = 5,
   autoComplete,
+  error,
 }) {
   const id = `field-${name}`;
+  const errorId = `${id}-error`;
 
   const commonProps = {
     id,
@@ -22,6 +24,8 @@ export default function FormField({
     required,
     autoComplete,
     "aria-required": required,
+    "aria-invalid": Boolean(error),
+    "aria-describedby": error ? errorId : undefined,
   };
 
   return (
@@ -32,6 +36,12 @@ export default function FormField({
         <textarea {...commonProps} rows={rows} />
       ) : (
         <input {...commonProps} type={type} />
+      )}
+
+      {error && (
+        <p className="field-error" id={errorId} role="alert">
+          {error}
+        </p>
       )}
     </div>
   );

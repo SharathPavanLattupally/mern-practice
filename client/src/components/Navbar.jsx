@@ -7,6 +7,7 @@ const links = [
   { label: "About Us", path: "/about" },
   { label: "Services", path: "/services" },
   { label: "Contact Us", path: "/contact" },
+  { label: "Student Registration", path: "/student-registration" },
   { label: "Privacy Policy", path: "/privacy-policy" },
 ];
 

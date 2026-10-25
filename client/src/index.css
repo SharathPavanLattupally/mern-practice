@@ -760,3 +760,53 @@ tbody tr:last-child td {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+
+/* Student registration form */
+.registration-page h1 {
+  margin-bottom: 14px;
+}
+
+.registration-form {
+  max-width: 720px;
+  margin: 32px auto 0;
+}
+
+.registration-form .form-field {
+  width: 100%;
+}
+
+.field-error {
+  margin: 0;
+  color: #b42318;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.form-field input[aria-invalid="true"],
+.form-field textarea[aria-invalid="true"],
+.registration-form select[aria-invalid="true"] {
+  border-color: #b42318;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+@media (max-width: 600px) {
+  .registration-form {
+    padding: 20px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions .button {
+    width: 100%;
+  }
+}
