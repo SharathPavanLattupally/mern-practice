@@ -1,13 +1,25 @@
 
 import { useState } from "react";
+import FormField from "../components/FormField";
 
 export default function Contact() {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
   const [submitted, setSubmitted] = useState(false);
+
+  function handleChange(event) {
+    const { name, value } = event.target;
+    setForm((previous) => ({ ...previous, [name]: value }));
+    setSubmitted(false);
+  }
 
   function handleSubmit(event) {
     event.preventDefault();
     setSubmitted(true);
-    event.currentTarget.reset();
+    setForm({ name: "", email: "", message: "" });
   }
 
   return (
@@ -19,14 +31,36 @@ export default function Contact() {
       </p>
 
       <form className="contact-form" onSubmit={handleSubmit}>
-        <label htmlFor="name">Full Name</label>
-        <input id="name" name="name" type="text" required />
+        <FormField
+          label="Full Name"
+          name="name"
+          value={form.name}
+          onChange={handleChange}
+          placeholder="Enter your full name"
+          autoComplete="name"
+          required
+        />
 
-        <label htmlFor="email">Email Address</label>
-        <input id="email" name="email" type="email" required />
+        <FormField
+          label="Email Address"
+          name="email"
+          type="email"
+          value={form.email}
+          onChange={handleChange}
+          placeholder="you@example.com"
+          autoComplete="email"
+          required
+        />
 
-        <label htmlFor="message">Message</label>
-        <textarea id="message" name="message" rows="5" required />
+        <FormField
+          label="Message"
+          name="message"
+          value={form.message}
+          onChange={handleChange}
+          placeholder="How can we help?"
+          multiline
+          required
+        />
 
         <button className="button button-primary" type="submit">
           Send Message
@@ -34,8 +68,7 @@ export default function Contact() {
 
         {submitted && (
           <p className="success-message" role="status">
-            Form submitted successfully! This demo does not send your message
-            to a server.
+            Demo submission successful. No message was sent to a server.
           </p>
         )}
       </form>

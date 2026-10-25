@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
 
 const links = [
@@ -10,18 +11,42 @@ const links = [
 ];
 
 export default function Navbar() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  function closeMenu() {
+    setMenuOpen(false);
+  }
+
   return (
     <header className="navbar">
-      <NavLink to="/" className="brand">
+      <NavLink to="/" className="brand" onClick={closeMenu}>
         MERN<span>App</span>
       </NavLink>
 
-      <nav className="nav-links" aria-label="Main navigation">
+      <button
+        type="button"
+        className="menu-toggle"
+        aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+        aria-expanded={menuOpen}
+        aria-controls="main-navigation"
+        onClick={() => setMenuOpen((open) => !open)}
+      >
+        <span />
+        <span />
+        <span />
+      </button>
+
+      <nav
+        id="main-navigation"
+        aria-label="Main navigation"
+        className={`nav-links ${menuOpen ? "nav-links-open" : ""}`}
+      >
         {links.map((link) => (
           <NavLink
             key={link.path}
             to={link.path}
             end={link.path === "/"}
+            onClick={closeMenu}
             className={({ isActive }) =>
               isActive ? "nav-link active" : "nav-link"
             }
