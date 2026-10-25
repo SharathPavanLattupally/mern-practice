@@ -1,0 +1,16 @@
+{
+  "name": "javascript-fundamentals-practice",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Task 2 JavaScript fundamentals exercises for the Student Management System",
+  "scripts": {
+    "basics": "node 01-basics.js",
+    "arrays": "node 02-student-arrays.js",
+    "syntax": "node 03-destructuring-spread.js",
+    "modules": "node 04-modules.js",
+    "async": "node 05-async-students.js",
+    "api": "node 06-api-fetch.js",
+    "test": "node --test"
+  }
+}
