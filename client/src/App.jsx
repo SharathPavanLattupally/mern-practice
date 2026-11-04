@@ -9,6 +9,8 @@ import Contact from "./pages/Contact";
 import StudentRegistration from "./pages/StudentRegistration";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
+import StudentsList from "./pages/StudentsList";
+import StudentEdit from "./pages/StudentEdit";
 
 export default function App() {
   return (
@@ -21,6 +23,8 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/student-registration" element={<StudentRegistration />}/>
+          <Route path="students" element={<StudentsList />} />
+          <Route path="students/edit/:id" element={<StudentEdit />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

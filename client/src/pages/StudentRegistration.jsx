@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { studentApi } from "../api/studentApi";
 import FormField from "../components/FormField";
 
 const initialForm = {
@@ -22,7 +23,9 @@ function validateForm(form) {
 
   if (!form.email.trim()) {
     errors.email = "Email address is required.";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+  } else if (
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
+  ) {
     errors.email = "Enter a valid email address.";
   }
 
@@ -49,11 +52,18 @@ function validateForm(form) {
   return errors;
 }
 
-// Reusable select component: demonstrates props and controlled inputs.
-function SelectField({ label, name, value, onChange, options, error }) {
+function SelectField({
+  label,
+  name,
+  value,
+  onChange,
+  options,
+  error,
+}) {
   return (
     <div className="form-field">
       <label htmlFor={name}>{label}</label>
+
       <select
         id={name}
         name={name}
@@ -64,12 +74,14 @@ function SelectField({ label, name, value, onChange, options, error }) {
         aria-describedby={error ? `${name}-error` : undefined}
       >
         <option value="">Select {label.toLowerCase()}</option>
+
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
         ))}
       </select>
+
       {error && (
         <p className="field-error" id={`${name}-error`} role="alert">
           {error}
@@ -79,7 +91,6 @@ function SelectField({ label, name, value, onChange, options, error }) {
   );
 }
 
-// Reusable error message component.
 function FieldError({ id, message }) {
   if (!message) return null;
 
@@ -93,7 +104,9 @@ function FieldError({ id, message }) {
 export default function StudentRegistration() {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
-  const [success, setSuccess] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     document.title = "Student Registration | MERN App";
@@ -107,9 +120,9 @@ export default function StudentRegistration() {
       [name]: value,
     }));
 
-    setSuccess("");
+    setApiError("");
+    setSuccessMessage("");
 
-    // Revalidate a field after the user changes it.
     setErrors((previous) => {
       const next = { ...previous };
       delete next[name];
@@ -117,103 +130,78 @@ export default function StudentRegistration() {
     });
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     const validationErrors = validateForm(form);
     setErrors(validationErrors);
-    setSuccess("");
+    setApiError("");
+    setSuccessMessage("");
 
     if (Object.keys(validationErrors).length > 0) {
       return;
     }
 
-    // Frontend demonstration only. Backend validation is still required.
-    console.log("Validated student form:", form);
-    setSuccess(
-      "Registration form validated successfully! Backend submission is not connected yet."
-    );
-    setForm({ ...initialForm });
-    setErrors({});
+    setIsSubmitting(true);
+
+    try {
+      const result = await studentApi.create({
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        mobile: form.mobile.trim(),
+        gender: form.gender,
+        course: form.course,
+        address: form.address.trim(),
+      });
+
+      setSuccessMessage(
+        result.message || "Student registered successfully!"
+      );
+
+      setForm({ ...initialForm });
+      setErrors({});
+    } catch (error) {
+      setApiError(
+        error.message || "Unable to register the student. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function handleReset() {
     setForm({ ...initialForm });
     setErrors({});
-    setSuccess("");
+    setApiError("");
+    setSuccessMessage("");
   }
 
   return (
     <section className="page-container registration-page">
       <p className="eyebrow">JOIN OUR PROGRAM</p>
+
       <h1>Student Registration</h1>
+
       <p className="page-intro">
         Enter your details below. Fields marked with * are required.
       </p>
 
-      <form className="contact-form registration-form" onSubmit={handleSubmit} noValidate>
-        <FormField
-          label="Full Name *"
-          name="fullName"
-          value={form.fullName}
-          onChange={handleChange}
-          placeholder="Enter your full name"
-          autoComplete="name"
-          required
-        />
-        <FieldError id="fullName-error" message={errors.fullName} />
+      <form
+        className="contact-form registration-form"
+        onSubmit={handleSubmit}
+        noValidate
+      >
+        {apiError && (
+          <p className="error-message" role="alert">
+            {apiError}
+          </p>
+        )}
 
-        <FormField
-          label="Email Address *"
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={handleChange}
-          placeholder="you@example.com"
-          autoComplete="email"
-          required
-        />
-        <FieldError id="email-error" message={errors.email} />
-
-        <FormField
-          label="Mobile Number *"
-          name="mobile"
-          type="tel"
-          value={form.mobile}
-          onChange={handleChange}
-          placeholder="10-digit mobile number"
-          autoComplete="tel-national"
-          required
-        />
-        <FieldError id="mobile-error" message={errors.mobile} />
-
-        <SelectField
-          label="Gender *"
-          name="gender"
-          value={form.gender}
-          onChange={handleChange}
-          error={errors.gender}
-          options={[
-            { value: "Male", label: "Male" },
-            { value: "Female", label: "Female" },
-            { value: "Other", label: "Other" },
-            { value: "Prefer not to say", label: "Prefer not to say" },
-          ]}
-        />
-
-        <SelectField
-          label="Course *"
-          name="course"
-          value={form.course}
-          onChange={handleChange}
-          error={errors.course}
-          options={[
-            { value: "MERN Stack Development", label: "MERN Stack Development" },
-            { value: "Java Full Stack", label: "Java Full Stack" },
-            { value: "Data Science", label: "Data Science" },
-            { value: "Cloud Computing", label: "Cloud Computing" },
-          ]}
-        />
+        {successMessage && (
+          <p className="success-message" role="status">
+            {successMessage}
+          </p>
+        )}
 
         <FormField
           label="Full Name *"
@@ -226,24 +214,93 @@ export default function StudentRegistration() {
           error={errors.fullName}
         />
 
+        <FormField
+          label="Email Address *"
+          name="email"
+          type="email"
+          value={form.email}
+          onChange={handleChange}
+          placeholder="you@example.com"
+          autoComplete="email"
+          required
+          error={errors.email}
+        />
+
+        <FormField
+          label="Mobile Number *"
+          name="mobile"
+          type="tel"
+          value={form.mobile}
+          onChange={handleChange}
+          placeholder="10-digit mobile number"
+          autoComplete="tel-national"
+          required
+          error={errors.mobile}
+        />
+
+        <SelectField
+          label="Gender *"
+          name="gender"
+          value={form.gender}
+          onChange={handleChange}
+          error={errors.gender}
+          options={[
+            { value: "Male", label: "Male" },
+            { value: "Female", label: "Female" },
+            { value: "Other", label: "Other" },
+            {
+              value: "Prefer not to say",
+              label: "Prefer not to say",
+            },
+          ]}
+        />
+
+        <SelectField
+          label="Course *"
+          name="course"
+          value={form.course}
+          onChange={handleChange}
+          error={errors.course}
+          options={[
+            {
+              value: "MERN Stack Development",
+              label: "MERN Stack Development",
+            },
+            { value: "Java Full Stack", label: "Java Full Stack" },
+            { value: "Data Science", label: "Data Science" },
+            { value: "Cloud Computing", label: "Cloud Computing" },
+          ]}
+        />
+
+        <FormField
+          label="Address *"
+          name="address"
+          value={form.address}
+          onChange={handleChange}
+          placeholder="Enter your full address"
+          autoComplete="street-address"
+          required
+          error={errors.address}
+        />
+
         <div className="form-actions">
-          <button className="button button-primary" type="submit">
-            Register Student
+          <button
+            className="button button-primary"
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Registering..." : "Register Student"}
           </button>
+
           <button
             className="button button-outline"
             type="button"
             onClick={handleReset}
+            disabled={isSubmitting}
           >
             Reset Form
           </button>
         </div>
-
-        {success && (
-          <p className="success-message" role="status">
-            {success}
-          </p>
-        )}
       </form>
     </section>
   );

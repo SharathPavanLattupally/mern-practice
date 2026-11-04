@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { NavLink } from "react-router-dom";
 
 const links = [
@@ -8,6 +9,7 @@ const links = [
   { label: "Services", path: "/services" },
   { label: "Contact Us", path: "/contact" },
   { label: "Student Registration", path: "/student-registration" },
+  { label: "Students List", path: "/students" },
   { label: "Privacy Policy", path: "/privacy-policy" },
 ];
 
