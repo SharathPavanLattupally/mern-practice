@@ -1020,3 +1020,70 @@ tbody tr:last-child td {
     grid-column: auto;
   }
 }
+
+
+.student-search-row {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0 20px;
+}
+
+.student-search-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.student-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.student-filters > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.student-filters select {
+  min-width: 150px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.success-message {
+  color: #16803c;
+  margin: 12px 0;
+}
+
+@media (max-width: 600px) {
+  .student-search-row {
+    flex-wrap: wrap;
+  }
+
+  .student-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .student-filters select {
+    width: 100%;
+  }
+
+  .table-container {
+    overflow-x: auto;
+  }
+}

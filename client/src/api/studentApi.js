@@ -40,7 +40,17 @@ async function request(endpoint, options = {}) {
 }
 
 export const studentApi = {
-  getAll: () => request("/students"),
+  getAll: (params = {}) => {
+  const query = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== "" && value !== undefined && value !== null) {
+      query.set(key, String(value));
+    }
+  });
+
+  return request(`/students?${query.toString()}`);
+},
 
   getById: (id) =>
     request(`/students/${encodeURIComponent(id)}`),
