@@ -1,5 +1,8 @@
 
+
 const express = require("express");
+const { protect } = require("../middleware/authMiddleware");
+
 const {
   getStudents,
   getStudentById,
@@ -10,6 +13,10 @@ const {
 
 const router = express.Router();
 
+// Protect all student routes
+router.use(protect);
+
+// Student CRUD routes
 router.route("/")
   .get(getStudents)
   .post(createStudent);
