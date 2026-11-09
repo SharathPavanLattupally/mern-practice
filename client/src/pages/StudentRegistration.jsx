@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { studentApi } from "../api/studentApi";
+import { apiRequest } from "../services/api";
 import FormField from "../components/FormField";
 
 const initialForm = {
@@ -9,6 +10,7 @@ const initialForm = {
   mobile: "",
   gender: "",
   course: "",
+  courseId: "",
   address: "",
 };
 
@@ -23,9 +25,7 @@ function validateForm(form) {
 
   if (!form.email.trim()) {
     errors.email = "Email address is required.";
-  } else if (
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
-  ) {
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
     errors.email = "Enter a valid email address.";
   }
 
@@ -39,8 +39,8 @@ function validateForm(form) {
     errors.gender = "Please select your gender.";
   }
 
-  if (!form.course) {
-    errors.course = "Please select a course.";
+  if (!form.courseId) {
+    errors.courseId = "Please select an available course.";
   }
 
   if (!form.address.trim()) {
@@ -59,6 +59,7 @@ function SelectField({
   onChange,
   options,
   error,
+  disabled = false,
 }) {
   return (
     <div className="form-field">
@@ -70,6 +71,7 @@ function SelectField({
         value={value}
         onChange={onChange}
         required
+        disabled={disabled}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${name}-error` : undefined}
       >
@@ -91,41 +93,73 @@ function SelectField({
   );
 }
 
-function FieldError({ id, message }) {
-  if (!message) return null;
-
-  return (
-    <p className="field-error" id={id} role="alert">
-      {message}
-    </p>
-  );
-}
-
 export default function StudentRegistration() {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
+  const [courses, setCourses] = useState([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [courseError, setCourseError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     document.title = "Student Registration | MERN App";
+
+    async function loadCourses() {
+      try {
+        setCoursesLoading(true);
+
+        const result = await apiRequest("/api/courses");
+
+        const activeCourses = (result.data || []).filter(
+          (course) => course.status === "Active"
+        );
+
+        setCourses(activeCourses);
+        setCourseError("");
+      } catch (error) {
+        setCourseError(error.message || "Unable to load courses.");
+      } finally {
+        setCoursesLoading(false);
+      }
+    }
+
+    loadCourses();
   }, []);
 
   function handleChange(event) {
     const { name, value } = event.target;
 
-    setForm((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
+    if (name === "courseId") {
+      const selectedCourse = courses.find(
+        (course) => course._id === value
+      );
+
+      setForm((previous) => ({
+        ...previous,
+        courseId: value,
+        course: selectedCourse?.courseName || "",
+      }));
+    } else {
+      setForm((previous) => ({
+        ...previous,
+        [name]: value,
+      }));
+    }
 
     setApiError("");
     setSuccessMessage("");
 
     setErrors((previous) => {
       const next = { ...previous };
+
       delete next[name];
+
+      if (name === "courseId") {
+        delete next.course;
+      }
+
       return next;
     });
   }
@@ -134,6 +168,7 @@ export default function StudentRegistration() {
     event.preventDefault();
 
     const validationErrors = validateForm(form);
+
     setErrors(validationErrors);
     setApiError("");
     setSuccessMessage("");
@@ -151,6 +186,7 @@ export default function StudentRegistration() {
         mobile: form.mobile.trim(),
         gender: form.gender,
         course: form.course,
+        courseId: form.courseId,
         address: form.address.trim(),
       });
 
@@ -200,6 +236,12 @@ export default function StudentRegistration() {
         {successMessage && (
           <p className="success-message" role="status">
             {successMessage}
+          </p>
+        )}
+
+        {courseError && (
+          <p className="error-message" role="alert">
+            {courseError}
           </p>
         )}
 
@@ -257,20 +299,22 @@ export default function StudentRegistration() {
 
         <SelectField
           label="Course *"
-          name="course"
-          value={form.course}
+          name="courseId"
+          value={form.courseId}
           onChange={handleChange}
-          error={errors.course}
-          options={[
-            {
-              value: "MERN Stack Development",
-              label: "MERN Stack Development",
-            },
-            { value: "Java Full Stack", label: "Java Full Stack" },
-            { value: "Data Science", label: "Data Science" },
-            { value: "Cloud Computing", label: "Cloud Computing" },
-          ]}
+          error={errors.courseId}
+          disabled={coursesLoading || courses.length === 0}
+          options={courses.map((course) => ({
+            value: course._id,
+            label: `${course.courseName} (${course.courseCode})`,
+          }))}
         />
+
+        {coursesLoading && <p>Loading available courses...</p>}
+
+        {!coursesLoading && !courseError && courses.length === 0 && (
+          <p>No active courses are currently available.</p>
+        )}
 
         <FormField
           label="Address *"
@@ -287,7 +331,7 @@ export default function StudentRegistration() {
           <button
             className="button button-primary"
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || coursesLoading || courses.length === 0}
           >
             {isSubmitting ? "Registering..." : "Register Student"}
           </button>

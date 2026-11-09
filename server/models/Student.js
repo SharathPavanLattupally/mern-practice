@@ -54,6 +54,13 @@ const studentSchema = new mongoose.Schema(
       minlength: [5, "Address must contain at least 5 characters."],
       maxlength: [500, "Address cannot exceed 500 characters."],
     },
+    courseId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Course",
+    required: false,
+    default: null
+    },
+    
   },
   {
     timestamps: true,

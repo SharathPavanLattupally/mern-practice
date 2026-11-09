@@ -11,6 +11,12 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 import StudentsList from "./pages/StudentsList";
 import StudentEdit from "./pages/StudentEdit";
+import StudentDetails from "./pages/StudentDetails";
+
+// Task 12 pages
+import Courses from "./pages/Courses";
+import CourseDetails from "./pages/CourseDetails";
+import Instructors from "./pages/Instructors";
 
 export default function App() {
   return (
@@ -22,9 +28,19 @@ export default function App() {
           <Route path="/services" element={<Services />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/student-registration" element={<StudentRegistration />}/>
-          <Route path="students" element={<StudentsList />} />
-          <Route path="students/edit/:id" element={<StudentEdit />} />
+          <Route path="/students/:id" element={<StudentDetails />} />
+
+          {/* Student routes */}
+          <Route path="/student-registration" element={<StudentRegistration />} />
+          <Route path="/students" element={<StudentsList />} />
+          <Route path="/students/edit/:id" element={<StudentEdit />} />
+
+          {/* Course routes */}
+          <Route path="/courses" element={<Courses />} />
+          <Route path="/courses/:id" element={<CourseDetails />} />
+
+          {/* Instructor routes */}
+          <Route path="/instructors" element={<Instructors />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

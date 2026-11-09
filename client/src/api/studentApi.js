@@ -1,10 +1,21 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+function getAccessToken() {
+  return (
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("token") ||
+    sessionStorage.getItem("accessToken") ||
+    sessionStorage.getItem("token")
+  );
+}
+
 async function request(endpoint, options = {}) {
   if (!API_BASE_URL) {
     throw new Error("API URL is not configured. Check client/.env.");
   }
+
+  const token = getAccessToken();
 
   let response;
 
@@ -13,6 +24,7 @@ async function request(endpoint, options = {}) {
       ...options,
       headers: {
         "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
       },
     });
@@ -41,16 +53,16 @@ async function request(endpoint, options = {}) {
 
 export const studentApi = {
   getAll: (params = {}) => {
-  const query = new URLSearchParams();
+    const query = new URLSearchParams();
 
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== "" && value !== undefined && value !== null) {
-      query.set(key, String(value));
-    }
-  });
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== "" && value !== undefined && value !== null) {
+        query.set(key, String(value));
+      }
+    });
 
-  return request(`/students?${query.toString()}`);
-},
+    return request(`/students?${query.toString()}`);
+  },
 
   getById: (id) =>
     request(`/students/${encodeURIComponent(id)}`),

@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { studentApi } from "../api/studentApi";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function StudentsList() {
   const [students, setStudents] = useState([]);
@@ -12,6 +12,7 @@ export default function StudentsList() {
 
   // Search, filters, sorting and pagination
   const [searchInput, setSearchInput] = useState("");
+
   const [filters, setFilters] = useState({
     search: "",
     course: "",
@@ -25,8 +26,12 @@ export default function StudentsList() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
+  // Refresh list after deleting a student
+  const [refresh, setRefresh] = useState(0);
+
   const navigate = useNavigate();
 
+  // Load students whenever filters or refresh value changes
   useEffect(() => {
     let cancelled = false;
 
@@ -47,7 +52,9 @@ export default function StudentsList() {
           setError(err.message || "Failed to load students.");
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
@@ -56,24 +63,29 @@ export default function StudentsList() {
     return () => {
       cancelled = true;
     };
-  }, [filters]);
+  }, [filters, refresh]);
 
+  // Update filter values
   function updateFilter(name, value) {
     setFilters((current) => ({
       ...current,
       [name]: value,
       page: 1,
     }));
+
     setSuccessMessage("");
   }
 
+  // Search students
   function handleSearchSubmit(event) {
     event.preventDefault();
     updateFilter("search", searchInput.trim());
   }
 
+  // Clear all filters
   function clearFilters() {
     setSearchInput("");
+
     setFilters({
       search: "",
       course: "",
@@ -83,8 +95,11 @@ export default function StudentsList() {
       page: 1,
       limit: 10,
     });
+
+    setSuccessMessage("");
   }
 
+  // Delete student
   async function handleDelete(id) {
     const confirmed = window.confirm(
       "Are you sure you want to delete this student?"
@@ -99,14 +114,10 @@ export default function StudentsList() {
     try {
       await studentApi.remove(id);
 
-      // Reload the current page so counts and pagination stay accurate.
       setSuccessMessage("Student deleted successfully.");
 
-      setFilters((current) => ({
-        ...current,
-        page: Math.max(1, current.page),
-        _refresh: Date.now(),
-      }));
+      // Refresh student list
+      setRefresh((current) => current + 1);
     } catch (err) {
       setError(err.message || "Failed to delete student.");
     } finally {
@@ -114,30 +125,30 @@ export default function StudentsList() {
     }
   }
 
-  // Re-fetch when deletion succeeds, including when page is unchanged.
-  // The _refresh value is removed from API parameters below.
-  const isFirstPage = filters.page === 1;
-
   return (
     <section className="page-container">
       <h1>Students List</h1>
 
+      {/* Success message */}
       {successMessage && (
         <p className="success-message" role="status">
           {successMessage}
         </p>
       )}
 
+      {/* Error message */}
       {error && (
         <p className="error-message" role="alert">
           {error}
         </p>
       )}
 
+      {/* Search form */}
       <form onSubmit={handleSearchSubmit}>
         <label htmlFor="student-search">
           Search by name or email
         </label>
+
         <div className="student-search-row">
           <input
             id="student-search"
@@ -147,17 +158,22 @@ export default function StudentsList() {
             maxLength={100}
             onChange={(event) => setSearchInput(event.target.value)}
           />
+
           <button type="submit">Search</button>
         </div>
       </form>
 
+      {/* Filters */}
       <div className="student-filters">
         <div>
           <label htmlFor="course-filter">Course</label>
+
           <select
             id="course-filter"
             value={filters.course}
-            onChange={(event) => updateFilter("course", event.target.value)}
+            onChange={(event) =>
+              updateFilter("course", event.target.value)
+            }
           >
             <option value="">All courses</option>
             <option value="MERN Stack Development">
@@ -173,10 +189,13 @@ export default function StudentsList() {
 
         <div>
           <label htmlFor="gender-filter">Gender</label>
+
           <select
             id="gender-filter"
             value={filters.gender}
-            onChange={(event) => updateFilter("gender", event.target.value)}
+            onChange={(event) =>
+              updateFilter("gender", event.target.value)
+            }
           >
             <option value="">All genders</option>
             <option value="Male">Male</option>
@@ -187,11 +206,13 @@ export default function StudentsList() {
 
         <div>
           <label htmlFor="sort-filter">Sort by</label>
+
           <select
             id="sort-filter"
             value={`${filters.sortBy}-${filters.order}`}
             onChange={(event) => {
               const [sortBy, order] = event.target.value.split("-");
+
               setFilters((current) => ({
                 ...current,
                 sortBy,
@@ -209,6 +230,7 @@ export default function StudentsList() {
 
         <div>
           <label htmlFor="page-size">Records per page</label>
+
           <select
             id="page-size"
             value={filters.limit}
@@ -227,10 +249,12 @@ export default function StudentsList() {
         </button>
       </div>
 
+      {/* Total count */}
       <p>
         Total matching students: <strong>{total}</strong>
       </p>
 
+      {/* Student data */}
       {loading ? (
         <p role="status">Loading students...</p>
       ) : error && students.length === 0 ? (
@@ -264,13 +288,17 @@ export default function StudentsList() {
                   <td>{student.email}</td>
                   <td>{student.mobile}</td>
                   <td>{student.gender}</td>
-                  <td>{student.course}</td>
+                  <td>
+                    {student.courseId?.courseName || student.course || "—"}
+                  </td>
                   <td>{student.address}</td>
+
                   <td>
                     {student.createdAt
                       ? new Date(student.createdAt).toLocaleDateString()
                       : "—"}
                   </td>
+
                   <td>
                     <button
                       type="button"
@@ -280,6 +308,13 @@ export default function StudentsList() {
                     >
                       Edit
                     </button>
+
+                    <Link
+                      to={`/students/${student._id}`}
+                      className="view-btn"
+                    >
+                      View Details
+                    </Link>
 
                     <button
                       type="button"
@@ -298,6 +333,7 @@ export default function StudentsList() {
         </div>
       )}
 
+      {/* Pagination */}
       {!loading && totalPages > 0 && (
         <div className="pagination">
           <button

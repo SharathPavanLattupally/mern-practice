@@ -8,6 +8,8 @@ const studentRoutes = require("./routes/studentRoutes");
 const authRoutes = require("./routes/authRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const cookieParser = require("cookie-parser");
+const courseRoutes = require("./routes/courseRoutes");
+const instructorRoutes = require("./routes/instructorRoutes");
 
 
 const app = express();
@@ -35,7 +37,8 @@ app.get("/", (req, res) => {
 // API Routes
 app.use("/api/students", studentRoutes);
 app.use("/api/auth", authRoutes);
-
+app.use("/api/courses", courseRoutes);
+app.use("/api/instructors", instructorRoutes);
 
 // Error-handling middleware
 app.use(notFound);
