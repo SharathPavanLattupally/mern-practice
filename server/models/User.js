@@ -37,14 +37,14 @@ const userSchema = new mongoose.Schema(
     },
 
     role: {
-      type: String,
-      enum: ["user", "admin"],
-      default: "user",
-    },
-    
+    type: String,
+    enum: ["admin", "staff", "viewer"],
+    default: "viewer"
+},
+
 tokenVersion: {
-  type: Number,
-  default: 0,
+    type: Number,
+    default: 0
 },
 
 refreshTokenHash: {

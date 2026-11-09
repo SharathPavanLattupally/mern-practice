@@ -1,14 +1,15 @@
-
+const { authorize } = require("../middleware/roleMiddleware");
 const express = require("express");
 
 const {
-  registerUser,
-  loginUser,
-  getProfile,
-  updateProfile,
-  changePassword,
-  forgotPassword,
-  resetPassword,
+    registerUser,
+    loginUser,
+    getProfile,
+    updateProfile,
+    changePassword,
+    forgotPassword,
+    resetPassword,
+    updateUserRole
 } = require("../controllers/authController");
 
 const { protect } = require("../middleware/authMiddleware");
@@ -26,4 +27,11 @@ router.get("/profile", protect, getProfile);
 router.patch("/profile", protect, updateProfile);
 router.patch("/change-password", protect, changePassword);
 
+
+router.patch(
+    "/users/:id/role",
+    protect,
+    authorize("admin"),
+    updateUserRole
+);
 module.exports = router;

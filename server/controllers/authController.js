@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 
+
 exports.registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -252,87 +253,42 @@ exports.getProfile = async (req, res) => {
 
 // Update logged-in user's profile
 exports.updateProfile = async (req, res) => {
-  try {
-    const { username, email } = req.body;
+    try {
+        const { username, email } = req.body;
 
-    if (username === undefined && email === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: "Please provide username or email to update.",
-      });
-    }
+        const updates = {};
 
-    const updates = {};
+        if (username !== undefined) updates.username = username;
+        if (email !== undefined) updates.email = email.toLowerCase().trim();
 
-    if (username !== undefined) {
-      if (
-        typeof username !== "string" ||
-        !/^[a-zA-Z0-9_]{3,30}$/.test(username.trim())
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "Username must be 3-30 characters and contain only letters, numbers, and underscores.",
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            { $set: updates },
+            {
+                new: true,
+                runValidators: true
+            }
+        ).select("-password");
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found."
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Profile updated successfully.",
+            data: user
         });
-      }
 
-      updates.username = username.trim();
-    }
-
-    if (email !== undefined) {
-      if (
-        typeof email !== "string" ||
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-      ) {
+    } catch (error) {
         return res.status(400).json({
-          success: false,
-          message: "Please enter a valid email address.",
+            success: false,
+            message: error.message
         });
-      }
-
-      updates.email = email.trim().toLowerCase();
     }
-
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { $set: updates },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found.",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Profile updated successfully.",
-      data: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    if (error.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: "Username or email is already in use.",
-      });
-    }
-
-    console.error("Update profile error:", error.message);
-
-    return res.status(500).json({
-      success: false,
-      message: "Unable to update profile.",
-    });
-  }
 };
 
 
@@ -561,3 +517,44 @@ exports.resetPassword = async (req, res) => {
     });
   }
 };
+
+exports.updateUserRole = async (req, res) => {
+    try {
+        const { role } = req.body;
+
+        const allowedRoles = ["admin", "staff", "viewer"];
+
+        if (!allowedRoles.includes(role)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid role."
+            });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { $set: { role } },
+            { new: true, runValidators: true }
+        ).select("-password");
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found."
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "User role updated successfully.",
+            data: user
+        });
+
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
