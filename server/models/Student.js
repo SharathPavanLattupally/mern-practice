@@ -54,13 +54,32 @@ const studentSchema = new mongoose.Schema(
       minlength: [5, "Address must contain at least 5 characters."],
       maxlength: [500, "Address cannot exceed 500 characters."],
     },
+
     courseId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Course",
-    required: false,
-    default: null
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
+      default: null,
     },
-    
+
+    // Student profile photo
+    profilePhoto: {
+      filename: { type: String },
+      path: { type: String },
+      mimetype: { type: String },
+      size: { type: Number },
+    },
+
+    // Private supporting documents
+    documents: [
+      {
+        filename: { type: String },
+        originalName: { type: String },
+        path: { type: String },
+        mimetype: { type: String },
+        size: { type: Number },
+        uploadedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,
