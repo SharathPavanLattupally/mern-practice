@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 import Student from "../models/Student.js";
 import Course from "../models/Course.js";
+import { sendEnrollmentConfirmation } from "../services/enrollmentEmailService.js";
 
 function isValidId(id) {
   return mongoose.isValidObjectId(id);
@@ -183,6 +184,7 @@ export const getStudentById = async (req, res, next) => {
 
 // POST /api/students
 // Create student with course reference validation
+
 export const createStudent = async (req, res, next) => {
   try {
     const {
@@ -202,13 +204,18 @@ export const createStudent = async (req, res, next) => {
       const selectedCourse = await getActiveCourse(courseId);
 
       if (!selectedCourse) {
-        return sendError(res, 400, "Invalid or inactive course reference.");
+        return sendError(
+          res,
+          400,
+          "Invalid or inactive course reference."
+        );
       }
 
       selectedCourseId = selectedCourse._id;
       studentCourse = selectedCourse.courseName;
     }
 
+    // Save student in MongoDB first
     const student = await Student.create({
       fullName,
       email,
@@ -219,21 +226,49 @@ export const createStudent = async (req, res, next) => {
       address,
     });
 
+    // Retrieve student with course details
     const populatedStudent = await Student.findById(student._id)
-      .populate("courseId", "courseName courseCode duration fee status");
+      .populate(
+        "courseId",
+        "courseName courseCode duration fee status"
+      );
+
+    // Send confirmation email after successful enrollment
+    // Email failure must not cancel the enrollment
+    let emailSent = false;
+
+    try {
+      await sendEnrollmentConfirmation(populatedStudent);
+      emailSent = true;
+
+      console.log("Enrollment confirmation email sent.");
+    } catch (emailError) {
+      console.error(
+        "Enrollment email delivery failed:",
+        emailError.message
+      );
+    }
 
     return res.status(201).json({
       success: true,
       message: "Student created successfully.",
+      emailSent,
       data: populatedStudent,
     });
 
   } catch (error) {
     if (error.code === 11000) {
-      return sendError(res, 409, "A student with this email already exists.");
+      return sendError(
+        res,
+        409,
+        "A student with this email already exists."
+      );
     }
 
-    if (error.name === "ValidationError" || error.name === "CastError") {
+    if (
+      error.name === "ValidationError" ||
+      error.name === "CastError"
+    ) {
       return sendError(
         res,
         400,
@@ -250,6 +285,7 @@ export const createStudent = async (req, res, next) => {
     next(error);
   }
 };
+
 
 // PATCH /api/students/:id
 // Update student and validate course reference
