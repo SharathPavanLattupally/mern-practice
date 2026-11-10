@@ -1,23 +1,24 @@
 
-const express = require("express");
-const router = express.Router();
+import express from "express";
 
-const {
+import {
   upload,
   validateUploadedFile,
-} = require("../middleware/uploadMiddleware");
+} from "../middleware/uploadMiddleware.js";
 
-const { protect } = require("../middleware/authMiddleware");
-const { authorize } = require("../middleware/roleMiddleware");
+import { protect } from "../middleware/authMiddleware.js";
+import { authorize } from "../middleware/roleMiddleware.js";
 
-const {
+import {
   uploadPhoto,
   uploadDocument,
   deletePhoto,
   downloadDocument,
   deleteDocument,
   getPhoto,
-} = require("../controllers/fileController");
+} from "../controllers/fileController.js";
+
+const router = express.Router();
 
 // Upload or replace profile photo
 router.post(
@@ -30,11 +31,7 @@ router.post(
 );
 
 // View profile photo
-router.get(
-  "/:id/photo",
-  protect,
-  getPhoto
-);
+router.get("/:id/photo", protect, getPhoto);
 
 // Upload supporting document
 router.post(
@@ -70,4 +67,4 @@ router.delete(
   deleteDocument
 );
 
-module.exports = router;
+export default router;

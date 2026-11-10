@@ -1,21 +1,20 @@
 
-require("dotenv").config();
+import "dotenv/config";
 
-const express = require("express");
-const cors = require("cors");
-const connectDB = require("./config/db");
-const studentRoutes = require("./routes/studentRoutes");
-const authRoutes = require("./routes/authRoutes");
-const { notFound, errorHandler } = require("./middleware/errorMiddleware");
-const cookieParser = require("cookie-parser");
-const courseRoutes = require("./routes/courseRoutes");
-const instructorRoutes = require("./routes/instructorRoutes");
-const fileRoutes = require("./routes/fileRoutes");
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
 
+import connectDB from "./config/db.js";
+import studentRoutes from "./routes/studentRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
+import courseRoutes from "./routes/courseRoutes.js";
+import instructorRoutes from "./routes/instructorRoutes.js";
+import fileRoutes from "./routes/fileRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
 
 // Middleware
 app.use(
@@ -24,9 +23,9 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(express.json({ limit: "20kb" }));
 app.use(cookieParser());
-
 
 // Root API
 app.get("/", (req, res) => {

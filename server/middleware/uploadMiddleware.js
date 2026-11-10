@@ -1,8 +1,13 @@
 
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-const crypto = require("crypto");
+import multer from "multer";
+import path from "node:path";
+import fs from "node:fs";
+import fsPromises from "node:fs/promises";
+import crypto from "node:crypto";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Create upload directories automatically
 const photoDir = path.join(__dirname, "../uploads/photos");
@@ -13,7 +18,6 @@ fs.mkdirSync(documentDir, { recursive: true });
 
 // Allowed file types
 const photoTypes = ["image/jpeg", "image/png", "image/webp"];
-
 const documentTypes = [
   "application/pdf",
   "image/jpeg",
@@ -34,8 +38,7 @@ const storage = multer.diskStorage({
 
   filename: (req, file, cb) => {
     const extension = path.extname(file.originalname).toLowerCase();
-    const safeName = `${crypto.randomUUID()}${extension}`;
-    cb(null, safeName);
+    cb(null, `${crypto.randomUUID()}${extension}`);
   },
 });
 
@@ -71,32 +74,28 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5 MB
+    fileSize: 5 * 1024 * 1024,
     files: 1,
   },
 });
 
-module.exports = upload;
-
-
-const fsPromises = require("fs/promises");
-
+// Validate actual file content
 async function validateUploadedFile(req, res, next) {
   if (!req.file) return next();
 
   try {
     const { fileTypeFromFile } = await import("file-type");
-
     const detected = await fileTypeFromFile(req.file.path);
 
     const allowed = {
-      photo: ["image/jpeg", "image/png", "image/webp"],
-      document: ["application/pdf", "image/jpeg", "image/png"],
+      photo: photoTypes,
+      document: documentTypes,
     };
 
-    const validTypes = allowed[req.file.fieldname] || [];
-
-    if (!detected || !validTypes.includes(detected.mime)) {
+    if (
+      !detected ||
+      !allowed[req.file.fieldname]?.includes(detected.mime)
+    ) {
       await fsPromises.unlink(req.file.path).catch(() => {});
 
       return res.status(400).json({
@@ -109,18 +108,11 @@ async function validateUploadedFile(req, res, next) {
   } catch (error) {
     await fsPromises.unlink(req.file.path).catch(() => {});
 
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
       message: "Unable to validate uploaded file.",
     });
   }
 }
 
-module.exports = {
-  ...module.exports,
-  validateUploadedFile,
-};
-module.exports = {
-  upload,
-  validateUploadedFile,
-};
+export { upload, validateUploadedFile };

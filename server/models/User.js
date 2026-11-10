@@ -1,5 +1,5 @@
 
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
@@ -37,39 +37,39 @@ const userSchema = new mongoose.Schema(
     },
 
     role: {
-    type: String,
-    enum: ["admin", "staff", "viewer"],
-    default: "viewer"
-},
+      type: String,
+      enum: ["admin", "staff", "viewer"],
+      default: "viewer",
+    },
 
-tokenVersion: {
-    type: Number,
-    default: 0
-},
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
 
-refreshTokenHash: {
-  type: String,
-  default: null,
-  select: false,
-},
+    refreshTokenHash: {
+      type: String,
+      default: null,
+      select: false,
+    },
 
-refreshTokenExpires: {
-  type: Date,
-  default: null,
-  select: false,
-},
+    refreshTokenExpires: {
+      type: Date,
+      default: null,
+      select: false,
+    },
 
     resetPasswordTokenHash: {
-  type: String,
-  default: null,
-  select: false,
-},
+      type: String,
+      default: null,
+      select: false,
+    },
 
-resetPasswordExpires: {
-  type: Date,
-  default: null,
-  select: false,
-},
+    resetPasswordExpires: {
+      type: Date,
+      default: null,
+      select: false,
+    },
   },
   {
     timestamps: true,
@@ -78,4 +78,4 @@ resetPasswordExpires: {
 
 const User = mongoose.model("User", userSchema);
 
-module.exports = User;
+export default User;

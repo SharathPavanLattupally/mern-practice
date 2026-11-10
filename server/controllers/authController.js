@@ -1,11 +1,10 @@
-const crypto = require("crypto");
-const sendEmail = require("../config/email");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const User = require("../models/User");
+import crypto from "node:crypto";
+import { sendEmail } from "../config/email.js";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import User from "../models/User.js";
 
-
-exports.registerUser = async (req, res) => {
+	export const registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
@@ -106,7 +105,7 @@ exports.registerUser = async (req, res) => {
 };
 
 
-exports.loginUser = async (req, res) => {
+export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -216,10 +215,8 @@ exports.loginUser = async (req, res) => {
 
 
 
-const mongoose = require("mongoose");
-
 // Get logged-in user's profile
-exports.getProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
 
@@ -252,7 +249,7 @@ exports.getProfile = async (req, res) => {
 };
 
 // Update logged-in user's profile
-exports.updateProfile = async (req, res) => {
+export const updateProfile = async (req, res) => {
     try {
         const { username, email } = req.body;
 
@@ -293,7 +290,7 @@ exports.updateProfile = async (req, res) => {
 
 
 
-exports.changePassword = async (req, res) => {
+export const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
@@ -374,7 +371,7 @@ exports.changePassword = async (req, res) => {
 };
 
 
-exports.forgotPassword = async (req, res) => {
+export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -458,7 +455,7 @@ exports.forgotPassword = async (req, res) => {
 };
 
 
-exports.resetPassword = async (req, res) => {
+export const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
     const { newPassword } = req.body;
@@ -518,7 +515,7 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-exports.updateUserRole = async (req, res) => {
+export const updateUserRole = async (req, res) => {
     try {
         const { role } = req.body;
 

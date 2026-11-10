@@ -1,15 +1,16 @@
-const express = require("express");
 
-const { protect } = require("../middleware/authMiddleware");
-const { authorize } = require("../middleware/roleMiddleware");
+import express from "express";
 
-const {
-    getStudents,
-    getStudentById,
-    createStudent,
-    updateStudent,
-    deleteStudent
-} = require("../controllers/studentController");
+import { protect } from "../middleware/authMiddleware.js";
+import { authorize } from "../middleware/roleMiddleware.js";
+
+import {
+  getStudents,
+  getStudentById,
+  createStudent,
+  updateStudent,
+  deleteStudent,
+} from "../controllers/studentController.js";
 
 const router = express.Router();
 
@@ -27,4 +28,4 @@ router.patch("/:id", authorize("admin", "staff"), updateStudent);
 // Only admin can delete
 router.delete("/:id", authorize("admin"), deleteStudent);
 
-module.exports = router;
+export default router;

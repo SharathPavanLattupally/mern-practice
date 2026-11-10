@@ -1,18 +1,19 @@
-const { authorize } = require("../middleware/roleMiddleware");
-const express = require("express");
 
-const {
-    registerUser,
-    loginUser,
-    getProfile,
-    updateProfile,
-    changePassword,
-    forgotPassword,
-    resetPassword,
-    updateUserRole
-} = require("../controllers/authController");
+import express from "express";
 
-const { protect } = require("../middleware/authMiddleware");
+import { authorize } from "../middleware/roleMiddleware.js";
+import {
+  registerUser,
+  loginUser,
+  getProfile,
+  updateProfile,
+  changePassword,
+  forgotPassword,
+  resetPassword,
+  updateUserRole,
+} from "../controllers/authController.js";
+
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -27,11 +28,12 @@ router.get("/profile", protect, getProfile);
 router.patch("/profile", protect, updateProfile);
 router.patch("/change-password", protect, changePassword);
 
-
+// Admin-only role update
 router.patch(
-    "/users/:id/role",
-    protect,
-    authorize("admin"),
-    updateUserRole
+  "/users/:id/role",
+  protect,
+  authorize("admin"),
+  updateUserRole
 );
-module.exports = router;
+
+export default router;

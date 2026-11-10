@@ -1,5 +1,5 @@
 
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const studentSchema = new mongoose.Schema(
   {
@@ -61,7 +61,6 @@ const studentSchema = new mongoose.Schema(
       default: null,
     },
 
-    // Student profile photo
     profilePhoto: {
       filename: { type: String },
       path: { type: String },
@@ -69,7 +68,6 @@ const studentSchema = new mongoose.Schema(
       size: { type: Number },
     },
 
-    // Private supporting documents
     documents: [
       {
         filename: { type: String },
@@ -86,4 +84,6 @@ const studentSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Student", studentSchema);
+const Student = mongoose.model("Student", studentSchema);
+
+export default Student;

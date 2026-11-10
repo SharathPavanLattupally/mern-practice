@@ -1,15 +1,17 @@
-const express = require("express");
+
+import express from "express";
+
+import { protect } from "../middleware/authMiddleware.js";
+import { authorize } from "../middleware/roleMiddleware.js";
+
+import {
+  getInstructors,
+  createInstructor,
+  updateInstructor,
+  deleteInstructor,
+} from "../controllers/instructorController.js";
+
 const router = express.Router();
-
-const { protect } = require("../middleware/authMiddleware");
-const { authorize } = require("../middleware/roleMiddleware");
-
-const {
-    getInstructors,
-    createInstructor,
-    updateInstructor,
-    deleteInstructor
-} = require("../controllers/instructorController");
 
 router.use(protect);
 
@@ -18,4 +20,4 @@ router.post("/", authorize("admin"), createInstructor);
 router.patch("/:id", authorize("admin"), updateInstructor);
 router.delete("/:id", authorize("admin"), deleteInstructor);
 
-module.exports = router;
+export default router;

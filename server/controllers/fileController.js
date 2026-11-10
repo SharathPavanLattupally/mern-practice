@@ -1,12 +1,16 @@
 
-const Student = require("../models/Student");
-const fs = require("fs/promises");
-const path = require("path");
+import Student from "../models/Student.js";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const uploadRoot = path.resolve(__dirname, "../uploads");
 
 // Upload or replace profile photo
-exports.uploadPhoto = async (req, res) => {
+export const uploadPhoto = async (req, res) => {
   let newFile;
 
   try {
@@ -40,7 +44,6 @@ exports.uploadPhoto = async (req, res) => {
 
     await student.save();
 
-    // Delete old photo only after database save succeeds
     if (oldPath) {
       await fs.unlink(path.join(uploadRoot, oldPath)).catch(() => {});
     }
@@ -63,7 +66,7 @@ exports.uploadPhoto = async (req, res) => {
 };
 
 // Upload supporting document
-exports.uploadDocument = async (req, res) => {
+export const uploadDocument = async (req, res) => {
   let newFile;
 
   try {
@@ -116,7 +119,7 @@ exports.uploadDocument = async (req, res) => {
 };
 
 // Remove profile photo
-exports.deletePhoto = async (req, res) => {
+export const deletePhoto = async (req, res) => {
   try {
     const student = await Student.findById(req.params.id);
 
@@ -154,7 +157,7 @@ exports.deletePhoto = async (req, res) => {
 };
 
 // Download private document
-exports.downloadDocument = async (req, res) => {
+export const downloadDocument = async (req, res) => {
   try {
     const student = await Student.findById(req.params.id);
 
@@ -200,7 +203,7 @@ exports.downloadDocument = async (req, res) => {
 };
 
 // Delete supporting document
-exports.deleteDocument = async (req, res) => {
+export const deleteDocument = async (req, res) => {
   try {
     const student = await Student.findById(req.params.id);
 
@@ -239,9 +242,8 @@ exports.deleteDocument = async (req, res) => {
   }
 };
 
-
 // View student profile photo securely
-exports.getPhoto = async (req, res) => {
+export const getPhoto = async (req, res) => {
   try {
     const student = await Student.findById(req.params.id);
 
