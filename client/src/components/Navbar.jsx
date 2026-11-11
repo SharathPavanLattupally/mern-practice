@@ -4,13 +4,17 @@ import { NavLink } from "react-router-dom";
 
 const links = [
   { label: "Home", path: "/" },
+
+  // Task 15 - Dashboard
+  { label: "Dashboard", path: "/dashboard" },
+
   { label: "About Us", path: "/about" },
   { label: "Services", path: "/services" },
   { label: "Contact Us", path: "/contact" },
   { label: "Student Registration", path: "/student-registration" },
   { label: "Students List", path: "/students" },
 
-  // Task 12 navigation
+  // Task 12 - Courses and Instructors
   { label: "Courses", path: "/courses" },
   { label: "Instructors", path: "/instructors" },
 

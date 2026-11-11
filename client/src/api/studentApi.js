@@ -84,3 +84,8 @@ export const studentApi = {
       method: "DELETE",
     }),
 };
+
+export const dashboardApi = {
+  getStats: (period = "7") =>
+    request(`/dashboard?period=${encodeURIComponent(period)}`),
+};

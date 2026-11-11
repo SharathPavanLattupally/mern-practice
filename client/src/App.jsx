@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import StudentsList from "./pages/StudentsList";
 import StudentEdit from "./pages/StudentEdit";
 import StudentDetails from "./pages/StudentDetails";
+import Dashboard from "./pages/Dashboard";
 
 // Task 12 pages
 import Courses from "./pages/Courses";
@@ -23,6 +24,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<MainLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/services" element={<Services />} />
