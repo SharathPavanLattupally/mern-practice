@@ -8,14 +8,17 @@ export default function Instructors() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [showForm, setShowForm] = useState(false);
+    const [formError, setFormError] = useState("");
 
     const role = getCurrentRole();
 
-    const [form, setForm] = useState({
+    const initialForm = {
         fullName: "",
         email: "",
         specialization: "",
-    });
+    };
+
+    const [form, setForm] = useState(initialForm);
 
     const loadInstructors = async () => {
         try {
@@ -35,31 +38,61 @@ export default function Instructors() {
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
+        setFormError("");
+    };
+
+    const validateForm = () => {
+        if (!form.fullName.trim()) {
+            return "Instructor name is required.";
+        }
+
+        if (!form.email.trim()) {
+            return "Email address is required.";
+        }
+
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailPattern.test(form.email.trim())) {
+            return "Please enter a valid email address.";
+        }
+
+        if (!form.specialization.trim()) {
+            return "Specialization is required.";
+        }
+
+        return "";
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        const validationError = validateForm();
+
+        if (validationError) {
+            setFormError(validationError);
+            return;
+        }
+
         try {
             await apiRequest("/api/instructors", {
                 method: "POST",
-                body: JSON.stringify(form),
+                body: JSON.stringify({
+                    fullName: form.fullName.trim(),
+                    email: form.email.trim().toLowerCase(),
+                    specialization: form.specialization.trim(),
+                }),
             });
 
             alert("Instructor created successfully!");
 
-            setForm({
-                fullName: "",
-                email: "",
-                specialization: "",
-            });
-
+            setForm(initialForm);
+            setFormError("");
             setShowForm(false);
+
             setLoading(true);
             await loadInstructors();
-
         } catch (err) {
-            alert(err.message);
+            setFormError(err.message);
         }
     };
 
@@ -75,7 +108,6 @@ export default function Instructors() {
 
             setLoading(true);
             await loadInstructors();
-
         } catch (err) {
             alert(err.message);
         }
@@ -94,7 +126,10 @@ export default function Instructors() {
                 {role === "admin" && (
                     <button
                         className="primary-btn"
-                        onClick={() => setShowForm(!showForm)}
+                        onClick={() => {
+                            setShowForm(!showForm);
+                            setFormError("");
+                        }}
                     >
                         {showForm ? "Close Form" : "+ Add Instructor"}
                     </button>
@@ -106,6 +141,10 @@ export default function Instructors() {
             {showForm && role === "admin" && (
                 <form className="management-form" onSubmit={handleSubmit}>
                     <h2>Add Instructor</h2>
+
+                    {formError && (
+                        <p className="error-message">{formError}</p>
+                    )}
 
                     <input
                         name="fullName"

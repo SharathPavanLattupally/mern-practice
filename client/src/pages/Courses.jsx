@@ -9,9 +9,11 @@ export default function Courses() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [showForm, setShowForm] = useState(false);
+    const [formError, setFormError] = useState("");
+
     const role = getCurrentRole();
 
-    const [form, setForm] = useState({
+    const initialForm = {
         courseName: "",
         courseCode: "",
         description: "",
@@ -19,8 +21,9 @@ export default function Courses() {
         fee: "",
         status: "Active",
         instructor: "",
-    });
+    };
 
+    const [form, setForm] = useState(initialForm);
     const [instructors, setInstructors] = useState([]);
 
     const loadCourses = async () => {
@@ -52,36 +55,71 @@ export default function Courses() {
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
+        setFormError("");
+    };
+
+    const validateForm = () => {
+        if (!form.courseName.trim()) {
+            return "Course name is required.";
+        }
+
+        if (!form.courseCode.trim()) {
+            return "Course code is required.";
+        }
+
+        if (!form.duration.trim()) {
+            return "Course duration is required.";
+        }
+
+        if (form.fee === "" || !Number.isFinite(Number(form.fee))) {
+            return "Please enter a valid course fee.";
+        }
+
+        if (Number(form.fee) < 0) {
+            return "Course fee cannot be negative.";
+        }
+
+        if (!form.instructor) {
+            return "Please select an instructor.";
+        }
+
+        if (!["Active", "Inactive"].includes(form.status)) {
+            return "Please select a valid course status.";
+        }
+
+        return "";
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        const validationError = validateForm();
+
+        if (validationError) {
+            setFormError(validationError);
+            return;
+        }
 
         try {
             await apiRequest("/api/courses", {
                 method: "POST",
                 body: JSON.stringify({
                     ...form,
+                    courseName: form.courseName.trim(),
+                    courseCode: form.courseCode.trim().toUpperCase(),
+                    duration: form.duration.trim(),
                     fee: Number(form.fee),
                 }),
             });
 
             alert("Course created successfully!");
 
-            setForm({
-                courseName: "",
-                courseCode: "",
-                description: "",
-                duration: "",
-                fee: "",
-                status: "Active",
-                instructor: "",
-            });
-
+            setForm(initialForm);
+            setFormError("");
             setShowForm(false);
-            loadCourses();
+            await loadCourses();
         } catch (err) {
-            alert(err.message);
+            setFormError(err.message);
         }
     };
 
@@ -96,7 +134,7 @@ export default function Courses() {
             });
 
             alert("Course deleted successfully!");
-            loadCourses();
+            await loadCourses();
         } catch (err) {
             alert(err.message);
         }
@@ -115,7 +153,10 @@ export default function Courses() {
                 {role === "admin" && (
                     <button
                         className="primary-btn"
-                        onClick={() => setShowForm(!showForm)}
+                        onClick={() => {
+                            setShowForm(!showForm);
+                            setFormError("");
+                        }}
                     >
                         {showForm ? "Close Form" : "+ Add Course"}
                     </button>
@@ -127,6 +168,10 @@ export default function Courses() {
             {showForm && role === "admin" && (
                 <form className="management-form" onSubmit={handleSubmit}>
                     <h2>Create New Course</h2>
+
+                    {formError && (
+                        <p className="error-message">{formError}</p>
+                    )}
 
                     <input
                         name="courseName"
@@ -164,6 +209,7 @@ export default function Courses() {
                         name="fee"
                         placeholder="Course Fee"
                         min="0"
+                        step="0.01"
                         value={form.fee}
                         onChange={handleChange}
                         required
