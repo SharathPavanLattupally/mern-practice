@@ -33,8 +33,33 @@ export default function Instructors() {
     };
 
     useEffect(() => {
-        loadInstructors();
-    }, []);
+    let isMounted = true;
+
+    const fetchInitialInstructors = async () => {
+        try {
+            const result = await apiRequest("/api/instructors");
+
+            if (isMounted) {
+                setInstructors(result.data || []);
+                setError("");
+            }
+        } catch (err) {
+            if (isMounted) {
+                setError(err.message);
+            }
+        } finally {
+            if (isMounted) {
+                setLoading(false);
+            }
+        }
+    };
+
+    fetchInitialInstructors();
+
+    return () => {
+        isMounted = false;
+    };
+}, []);
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });

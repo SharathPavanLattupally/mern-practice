@@ -39,19 +39,40 @@ export default function Courses() {
         }
     };
 
-    const loadInstructors = async () => {
+    
+
+    useEffect(() => {
+    let isMounted = true;
+
+    const fetchInitialData = async () => {
         try {
-            const result = await apiRequest("/api/instructors");
-            setInstructors(result.data || []);
+            const [coursesResult, instructorsResult] = await Promise.all([
+                apiRequest("/api/courses"),
+                apiRequest("/api/instructors"),
+            ]);
+
+            if (isMounted) {
+                setCourses(coursesResult.data || []);
+                setInstructors(instructorsResult.data || []);
+                setError("");
+            }
         } catch (err) {
-            setError(err.message);
+            if (isMounted) {
+                setError(err.message);
+            }
+        } finally {
+            if (isMounted) {
+                setLoading(false);
+            }
         }
     };
 
-    useEffect(() => {
-        loadCourses();
-        loadInstructors();
-    }, []);
+    fetchInitialData();
+
+    return () => {
+        isMounted = false;
+    };
+}, []);
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
