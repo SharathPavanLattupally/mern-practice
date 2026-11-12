@@ -1,20 +1,29 @@
 
+const VALID_ROLES = ["admin", "staff", "viewer"];
+
 export const authorize = (...allowedRoles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required.",
-      });
-    }
+    const roles = allowedRoles.filter((role) =>
+        VALID_ROLES.includes(role)
+    );
 
-    if (!allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: "You do not have permission to perform this action.",
-      });
-    }
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required.",
+            });
+        }
 
-    next();
-  };
+        if (
+            roles.length === 0 ||
+            !roles.includes(req.user.role)
+        ) {
+            return res.status(403).json({
+                success: false,
+                message: "You do not have permission to perform this action.",
+            });
+        }
+
+        return next();
+    };
 };

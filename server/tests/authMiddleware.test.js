@@ -188,9 +188,12 @@ describe("JWT authentication middleware", () => {
     await protect(req, res, next);
 
     expect(jwtVerify).toHaveBeenCalledWith(
-      "valid-token",
-      process.env.JWT_SECRET
-    );
+    "valid-token",
+    process.env.JWT_SECRET,
+    {
+        algorithms: ["HS256"],
+    }
+);
 
     expect(req.user).toEqual({
       id: userId,

@@ -8,7 +8,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "vitest tests",
-  "test:run": "vitest run tests"
+    "test:run": "vitest run tests"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -16,6 +16,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.7.4",
     "file-type": "^22.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.11.4",
