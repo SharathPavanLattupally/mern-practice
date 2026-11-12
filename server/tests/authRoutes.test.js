@@ -15,6 +15,7 @@ const {
   forgotPassword,
   resetPassword,
   updateUserRole,
+  logoutUser,
 } = vi.hoisted(() => ({
   jwtVerify: vi.fn(),
   findById: vi.fn(),
@@ -28,6 +29,7 @@ const {
   forgotPassword: vi.fn(),
   resetPassword: vi.fn(),
   updateUserRole: vi.fn(),
+  logoutUser: vi.fn(),
 }));
 
 vi.mock("jsonwebtoken", () => ({
@@ -51,6 +53,7 @@ vi.mock("../controllers/authController.js", () => ({
   forgotPassword,
   resetPassword,
   updateUserRole,
+  logoutUser,
 }));
 
 import authRoutes from "../routes/authRoutes.js";
@@ -72,6 +75,7 @@ function configureControllerMocks() {
     forgotPassword,
     resetPassword,
     updateUserRole,
+    logoutUser,
   ];
 
   handlers.forEach((handler) => {
@@ -212,5 +216,14 @@ describe("Authentication routes and RBAC", () => {
 
     expect(response.status).toBe(401);
     expect(updateUserRole).not.toHaveBeenCalled();
+  });
+
+  it("allows an authenticated user to log out", async () => {
+    const response = await request(app)
+      .post("/api/auth/logout")
+      .set("Authorization", "Bearer valid-token");
+
+    expect(response.status).toBe(200);
+    expect(logoutUser).toHaveBeenCalledOnce();
   });
 });

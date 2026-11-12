@@ -7,35 +7,16 @@ node_modules/
 .env.*
 !.env.example
 
-# Build output
+# Build artifacts
 dist/
 build/
-
-# Logs
-*.log
-npm-debug.log*
-
-# Operating system and editor files
-.DS_Store
-Thumbs.db
-.vscode/
-
-node_modules/
-.env
-server/uploads/
+coverage/
 client/dist/
 
-# Environment secrets
-.env
-.env.*
-!.env.example
-
-# Dependencies
-node_modules/
-
-# Build files
-dist/
-build/
+# Uploaded files and sensitive local data
+server/uploads/
+server/uploads/*
+uploads/
 
 # Logs
 *.log
@@ -44,3 +25,9 @@ npm-debug.log*
 # Temporary files
 .tmp/
 temp/
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

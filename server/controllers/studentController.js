@@ -4,10 +4,12 @@ import Student from "../models/Student.js";
 import Course from "../models/Course.js";
 import { sendEnrollmentConfirmation } from "../services/enrollmentEmailService.js";
 
+// Validate MongoDB ObjectId
 function isValidId(id) {
   return mongoose.isValidObjectId(id);
 }
 
+// Standard API error response
 function sendError(res, status, message, errors) {
   return res.status(status).json({
     success: false,
@@ -16,7 +18,86 @@ function sendError(res, status, message, errors) {
   });
 }
 
-// Validate and retrieve an active course
+// Ensure request body is a plain object
+function isPlainObject(value) {
+  if (
+    value === null ||
+    typeof value !== "object" ||
+    Array.isArray(value)
+  ) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+
+  return (
+    prototype === Object.prototype ||
+    prototype === null
+  );
+}
+
+// Validate allowed request fields and their types
+function validateStudentPayload(body, allowedFields) {
+  if (!isPlainObject(body)) {
+    return "Request body must be a valid JSON object.";
+  }
+
+  const unknownFields = Object.keys(body).filter(
+    (field) => !allowedFields.includes(field)
+  );
+
+  if (unknownFields.length > 0) {
+    return `Unsupported field: ${unknownFields[0]}.`;
+  }
+
+  for (const [field, value] of Object.entries(body)) {
+    if (field === "courseId") {
+      if (
+        value !== null &&
+        typeof value !== "string"
+      ) {
+        return "courseId must be a valid ID or null.";
+      }
+
+      if (typeof value === "string") {
+        body[field] = value.trim();
+      }
+
+      continue;
+    }
+
+    if (typeof value !== "string") {
+      return `${field} must be a string.`;
+    }
+
+    body[field] = value.trim();
+  }
+
+  return null;
+}
+
+// Convert Mongoose validation errors into safe responses
+function handleValidationError(res, error) {
+  if (error.name === "ValidationError") {
+    return sendError(
+      res,
+      400,
+      "Student data is invalid.",
+      Object.values(error.errors).map((item) => ({
+        field: item.path,
+        message: item.message,
+      }))
+    );
+  }
+
+  if (error.name === "CastError") {
+    return sendError(res, 400, "Invalid field value.");
+  }
+
+  return null;
+}
+
+// Retrieve an active course
 async function getActiveCourse(courseId) {
   if (!isValidId(courseId)) {
     return null;
@@ -32,7 +113,7 @@ async function getActiveCourse(courseId) {
 }
 
 // GET /api/students
-// Search, filter, sort, paginate and populate course details
+// Shared student directory with search, filters and pagination
 export const getStudents = async (req, res, next) => {
   try {
     const {
@@ -46,8 +127,15 @@ export const getStudents = async (req, res, next) => {
       limit = "10",
     } = req.query;
 
-    if (typeof search !== "string" || search.length > 100) {
-      return sendError(res, 400, "Search must be a string of at most 100 characters.");
+    if (
+      typeof search !== "string" ||
+      search.length > 100
+    ) {
+      return sendError(
+        res,
+        400,
+        "Search must be a string of at most 100 characters."
+      );
     }
 
     const pageNumber = Number(page);
@@ -58,28 +146,44 @@ export const getStudents = async (req, res, next) => {
       !/^[1-9]\d*$/.test(page) ||
       !Number.isSafeInteger(pageNumber)
     ) {
-      return sendError(res, 400, "Page must be a positive integer.");
+      return sendError(
+        res,
+        400,
+        "Page must be a positive integer."
+      );
     }
 
     if (
       typeof limit !== "string" ||
       !["10", "25", "50"].includes(limit)
     ) {
-      return sendError(res, 400, "Limit must be 10, 25, or 50.");
+      return sendError(
+        res,
+        400,
+        "Limit must be 10, 25, or 50."
+      );
     }
 
     if (
       typeof sortBy !== "string" ||
       !["name", "createdAt"].includes(sortBy)
     ) {
-      return sendError(res, 400, "sortBy must be name or createdAt.");
+      return sendError(
+        res,
+        400,
+        "sortBy must be name or createdAt."
+      );
     }
 
     if (
       typeof order !== "string" ||
       !["asc", "desc"].includes(order)
     ) {
-      return sendError(res, 400, "Order must be asc or desc.");
+      return sendError(
+        res,
+        400,
+        "Order must be asc or desc."
+      );
     }
 
     if (
@@ -87,35 +191,66 @@ export const getStudents = async (req, res, next) => {
       typeof courseId !== "string" ||
       typeof gender !== "string"
     ) {
-      return sendError(res, 400, "Invalid course or gender filter.");
+      return sendError(
+        res,
+        400,
+        "Invalid course or gender filter."
+      );
     }
 
     if (courseId && !isValidId(courseId)) {
       return sendError(res, 400, "Invalid course ID.");
     }
 
-    const allowedCourses = Student.schema.path("course").enumValues;
-    const allowedGenders = Student.schema.path("gender").enumValues;
+    const allowedCourses =
+      Student.schema.path("course").enumValues;
 
-    if (course && !allowedCourses.includes(course)) {
-      return sendError(res, 400, "Invalid course filter.");
+    const allowedGenders =
+      Student.schema.path("gender").enumValues;
+
+    if (
+      course &&
+      !allowedCourses.includes(course)
+    ) {
+      return sendError(
+        res,
+        400,
+        "Invalid course filter."
+      );
     }
 
-    if (gender && !allowedGenders.includes(gender)) {
-      return sendError(res, 400, "Invalid gender filter.");
+    if (
+      gender &&
+      !allowedGenders.includes(gender)
+    ) {
+      return sendError(
+        res,
+        400,
+        "Invalid gender filter."
+      );
     }
 
     const filter = {};
 
+    // Escape regex characters to prevent regex injection
     if (search.trim()) {
-      const escapedSearch = search.trim().replace(
-        /[.*+?^${}()|[\]\\]/g,
-        "\\$&"
-      );
+      const escapedSearch = search
+        .trim()
+        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
       filter.$or = [
-        { fullName: { $regex: escapedSearch, $options: "i" } },
-        { email: { $regex: escapedSearch, $options: "i" } },
+        {
+          fullName: {
+            $regex: escapedSearch,
+            $options: "i",
+          },
+        },
+        {
+          email: {
+            $regex: escapedSearch,
+            $options: "i",
+          },
+        },
       ];
     }
 
@@ -123,18 +258,35 @@ export const getStudents = async (req, res, next) => {
     if (courseId) filter.courseId = courseId;
     if (gender) filter.gender = gender;
 
-    const sortField = sortBy === "name" ? "fullName" : "createdAt";
-    const sortDirection = order === "asc" ? 1 : -1;
+    const sortField =
+      sortBy === "name" ? "fullName" : "createdAt";
+
+    const sortDirection =
+      order === "asc" ? 1 : -1;
+
     const skip = (pageNumber - 1) * pageSize;
 
-    if (!Number.isSafeInteger(skip)) {
-      return sendError(res, 400, "Page number is too large.");
+    if (
+      !Number.isSafeInteger(skip) ||
+      skip > 1000000
+    ) {
+      return sendError(
+        res,
+        400,
+        "Requested page is too large."
+      );
     }
 
     const [students, total] = await Promise.all([
       Student.find(filter)
-        .populate("courseId", "courseName courseCode duration fee status")
-        .sort({ [sortField]: sortDirection, _id: 1 })
+        .populate(
+          "courseId",
+          "courseName courseCode duration fee status"
+        )
+        .sort({
+          [sortField]: sortDirection,
+          _id: 1,
+        })
         .skip(skip)
         .limit(pageSize)
         .lean(),
@@ -151,22 +303,27 @@ export const getStudents = async (req, res, next) => {
       pageSize,
       data: students,
     });
-
   } catch (error) {
     next(error);
   }
 };
 
 // GET /api/students/:id
-// Get student details with populated course
-export const getStudentById = async (req, res, next) => {
+export const getStudentById = async (
+  req,
+  res,
+  next
+) => {
   try {
     if (!isValidId(req.params.id)) {
       return sendError(res, 400, "Invalid student ID.");
     }
 
     const student = await Student.findById(req.params.id)
-      .populate("courseId", "courseName courseCode description duration fee status");
+      .populate(
+        "courseId",
+        "courseName courseCode description duration fee status"
+      );
 
     if (!student) {
       return sendError(res, 404, "Student not found.");
@@ -176,17 +333,37 @@ export const getStudentById = async (req, res, next) => {
       success: true,
       data: student,
     });
-
   } catch (error) {
     next(error);
   }
 };
 
 // POST /api/students
-// Create student with course reference validation
-
-export const createStudent = async (req, res, next) => {
+export const createStudent = async (
+  req,
+  res,
+  next
+) => {
   try {
+    const allowedFields = [
+      "fullName",
+      "email",
+      "mobile",
+      "gender",
+      "course",
+      "courseId",
+      "address",
+    ];
+
+    const validationError = validateStudentPayload(
+      req.body,
+      allowedFields
+    );
+
+    if (validationError) {
+      return sendError(res, 400, validationError);
+    }
+
     const {
       fullName,
       email,
@@ -201,7 +378,8 @@ export const createStudent = async (req, res, next) => {
     let selectedCourseId = null;
 
     if (courseId) {
-      const selectedCourse = await getActiveCourse(courseId);
+      const selectedCourse =
+        await getActiveCourse(courseId);
 
       if (!selectedCourse) {
         return sendError(
@@ -215,7 +393,6 @@ export const createStudent = async (req, res, next) => {
       studentCourse = selectedCourse.courseName;
     }
 
-    // Save student in MongoDB first
     const student = await Student.create({
       fullName,
       email,
@@ -226,26 +403,29 @@ export const createStudent = async (req, res, next) => {
       address,
     });
 
-    // Retrieve student with course details
-    const populatedStudent = await Student.findById(student._id)
-      .populate(
-        "courseId",
-        "courseName courseCode duration fee status"
-      );
+    const populatedStudent = await Student.findById(
+      student._id
+    ).populate(
+      "courseId",
+      "courseName courseCode duration fee status"
+    );
 
-    // Send confirmation email after successful enrollment
-    // Email failure must not cancel the enrollment
+    // Enrollment succeeds even if email delivery fails
     let emailSent = false;
 
     try {
-      await sendEnrollmentConfirmation(populatedStudent);
-      emailSent = true;
+      if (populatedStudent) {
+        await sendEnrollmentConfirmation(populatedStudent);
+        emailSent = true;
 
-      console.log("Enrollment confirmation email sent.");
+        console.info(
+          "Enrollment confirmation email sent."
+        );
+      }
     } catch (emailError) {
+      // Do not expose provider details or personal data
       console.error(
-        "Enrollment email delivery failed:",
-        emailError.message
+        "Enrollment email delivery failed."
       );
     }
 
@@ -255,7 +435,6 @@ export const createStudent = async (req, res, next) => {
       emailSent,
       data: populatedStudent,
     });
-
   } catch (error) {
     if (error.code === 11000) {
       return sendError(
@@ -265,31 +444,23 @@ export const createStudent = async (req, res, next) => {
       );
     }
 
-    if (
-      error.name === "ValidationError" ||
-      error.name === "CastError"
-    ) {
-      return sendError(
-        res,
-        400,
-        "Student data is invalid.",
-        error.name === "ValidationError"
-          ? Object.values(error.errors).map((item) => ({
-              field: item.path,
-              message: item.message,
-            }))
-          : [{ message: error.message }]
-      );
+    const validationResponse =
+      handleValidationError(res, error);
+
+    if (validationResponse) {
+      return validationResponse;
     }
 
     next(error);
   }
 };
 
-
 // PATCH /api/students/:id
-// Update student and validate course reference
-export const updateStudent = async (req, res, next) => {
+export const updateStudent = async (
+  req,
+  res,
+  next
+) => {
   try {
     if (!isValidId(req.params.id)) {
       return sendError(res, 400, "Invalid student ID.");
@@ -304,6 +475,15 @@ export const updateStudent = async (req, res, next) => {
       "courseId",
       "address",
     ];
+
+    const validationError = validateStudentPayload(
+      req.body,
+      allowedFields
+    );
+
+    if (validationError) {
+      return sendError(res, 400, validationError);
+    }
 
     const updates = {};
 
@@ -323,32 +503,45 @@ export const updateStudent = async (req, res, next) => {
 
     // Validate selected course
     if (Object.hasOwn(updates, "courseId")) {
-      if (updates.courseId === null || updates.courseId === "") {
+      if (
+        updates.courseId === null ||
+        updates.courseId === ""
+      ) {
         updates.courseId = null;
       } else {
-        const selectedCourse = await getActiveCourse(updates.courseId);
+        const selectedCourse =
+          await getActiveCourse(updates.courseId);
 
         if (!selectedCourse) {
-          return sendError(res, 400, "Invalid or inactive course reference.");
+          return sendError(
+            res,
+            400,
+            "Invalid or inactive course reference."
+          );
         }
 
         updates.courseId = selectedCourse._id;
         updates.course = selectedCourse.courseName;
       }
     } else if (Object.hasOwn(updates, "course")) {
-      // Legacy course-name update: remove old reference
+      // Legacy course-name update
       updates.courseId = null;
     }
 
     const student = await Student.findByIdAndUpdate(
       req.params.id,
-      { $set: updates },
+      {
+        $set: updates,
+      },
       {
         new: true,
         runValidators: true,
         context: "query",
       }
-    ).populate("courseId", "courseName courseCode duration fee status");
+    ).populate(
+      "courseId",
+      "courseName courseCode duration fee status"
+    );
 
     if (!student) {
       return sendError(res, 404, "Student not found.");
@@ -359,24 +552,20 @@ export const updateStudent = async (req, res, next) => {
       message: "Student updated successfully.",
       data: student,
     });
-
   } catch (error) {
     if (error.code === 11000) {
-      return sendError(res, 409, "A student with this email already exists.");
-    }
-
-    if (error.name === "ValidationError" || error.name === "CastError") {
       return sendError(
         res,
-        400,
-        "Student data is invalid.",
-        error.name === "ValidationError"
-          ? Object.values(error.errors).map((item) => ({
-              field: item.path,
-              message: item.message,
-            }))
-          : [{ message: error.message }]
+        409,
+        "A student with this email already exists."
       );
+    }
+
+    const validationResponse =
+      handleValidationError(res, error);
+
+    if (validationResponse) {
+      return validationResponse;
     }
 
     next(error);
@@ -384,13 +573,19 @@ export const updateStudent = async (req, res, next) => {
 };
 
 // DELETE /api/students/:id
-export const deleteStudent = async (req, res, next) => {
+export const deleteStudent = async (
+  req,
+  res,
+  next
+) => {
   try {
     if (!isValidId(req.params.id)) {
       return sendError(res, 400, "Invalid student ID.");
     }
 
-    const student = await Student.findByIdAndDelete(req.params.id);
+    const student = await Student.findByIdAndDelete(
+      req.params.id
+    );
 
     if (!student) {
       return sendError(res, 404, "Student not found.");
@@ -401,7 +596,6 @@ export const deleteStudent = async (req, res, next) => {
       message: "Student deleted successfully.",
       data: student,
     });
-
   } catch (error) {
     next(error);
   }
