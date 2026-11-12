@@ -13,62 +13,97 @@ import fileRoutes from "./routes/fileRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 
 import {
-    notFound,
-    errorHandler,
+  notFound,
+  errorHandler,
 } from "./middleware/errorMiddleware.js";
 
 const app = express();
 
-// Explicitly permitted frontend origins.
 const allowedOrigins = (
-    process.env.CLIENT_URL || "http://localhost:5173"
+  process.env.CLIENT_URL || "http://localhost:5173"
 )
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 app.disable("x-powered-by");
 
 // CORS configuration.
 app.use(
-    cors({
-        origin: (origin, callback) => {
-            if (!origin || allowedOrigins.includes(origin)) {
-                return callback(null, true);
-            }
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
 
-            return callback(new Error("Origin not allowed by CORS"));
-        },
-        credentials: true,
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization"],
-    })
+      return callback(null, false);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
 );
 
 // Security response headers.
 app.use((req, res, next) => {
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
-    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-    res.setHeader("Cache-Control", "no-store");
-    next();
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Cache-Control", "no-store");
+  next();
 });
 
 // Request body limits.
 app.use(express.json({ limit: "20kb" }));
-app.use(express.urlencoded({
+app.use(
+  express.urlencoded({
     extended: false,
     limit: "20kb",
-}));
+  })
+);
 
 app.use(cookieParser());
 
+// CSRF protection using Origin validation.
+app.use((req, res, next) => {
+  const safeMethods = ["GET", "HEAD", "OPTIONS"];
+
+  if (safeMethods.includes(req.method)) {
+    return next();
+  }
+
+  const origin = req.get("Origin");
+  const hasRefreshCookie = Boolean(req.cookies?.refreshToken);
+
+  // Reject state-changing cookie requests without an Origin header.
+  if (!origin) {
+    if (hasRefreshCookie) {
+      return res.status(403).json({
+        success: false,
+        message: "Request origin is required.",
+      });
+    }
+
+    return next();
+  }
+
+  // Reject requests from untrusted origins.
+  if (!allowedOrigins.includes(origin)) {
+    return res.status(403).json({
+      success: false,
+      message: "Request origin is not allowed.",
+    });
+  }
+
+  next();
+});
+
 // Health check.
 app.get("/", (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: "Student Management System API is running",
-    });
+  res.status(200).json({
+    success: true,
+    message: "Student Management System API is running",
+  });
 });
 
 // API routes.
